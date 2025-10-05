@@ -20,7 +20,7 @@ import {
 } from '@/utils/sudoku';
 
 const { width } = Dimensions.get('window');
-const GRID_SIZE = Math.min(width - 40, 400);
+const GRID_SIZE = Math.min(width - 40, 380);
 const CELL_SIZE = GRID_SIZE / 9;
 
 export default function GameScreen() {
@@ -146,7 +146,7 @@ export default function GameScreen() {
           <Text style={styles.timerText}>{formatTime(timer)}</Text>
         </View>
         <TouchableOpacity style={styles.iconButton} onPress={handleNewGame}>
-          <RotateCcw size={24} color="#2563eb" />
+          <RotateCcw size={22} color="#2563eb" />
         </TouchableOpacity>
       </View>
 
@@ -208,19 +208,19 @@ export default function GameScreen() {
         </View>
       </View>
 
-      <View style={[styles.controls, { paddingBottom: Platform.OS === 'web' ? 16 : insets.bottom }]}>
+      <View style={[styles.controls, { paddingBottom: Platform.OS === 'web' ? 20 : Math.max(insets.bottom, 20) }]}>
         <View style={styles.toolButtons}>
           <TouchableOpacity
             style={[styles.toolButton, notesMode && styles.toolButtonActive]}
             onPress={() => setNotesMode(!notesMode)}
           >
-            <Edit3 size={20} color={notesMode ? '#fff' : '#2563eb'} />
+            <Edit3 size={18} color={notesMode ? '#fff' : '#2563eb'} />
             <Text style={[styles.toolButtonText, notesMode && styles.toolButtonTextActive]}>
               Notes
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolButton} onPress={handleErase}>
-            <Eraser size={20} color="#2563eb" />
+            <Eraser size={18} color="#2563eb" />
             <Text style={styles.toolButtonText}>Erase</Text>
           </TouchableOpacity>
         </View>
@@ -252,61 +252,60 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   timerContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   timerText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600' as const,
     color: '#1e293b',
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   completeContainer: {
     backgroundColor: '#10b981',
     marginHorizontal: 20,
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: 12,
+    padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
   completeText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700' as const,
     color: '#fff',
     marginBottom: 4,
   },
   completeTime: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600' as const,
     color: '#fff',
   },
   gridContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   grid: {
     width: GRID_SIZE,
@@ -317,10 +316,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   cell: {
     width: CELL_SIZE,
@@ -379,23 +378,23 @@ const styles = StyleSheet.create({
   },
   controls: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 12,
   },
   toolButtons: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 12,
   },
   toolButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
+    gap: 6,
+    paddingVertical: 10,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 2,
+    borderRadius: 10,
+    borderWidth: 1.5,
     borderColor: '#e2e8f0',
   },
   toolButtonActive: {
@@ -403,7 +402,7 @@ const styles = StyleSheet.create({
     borderColor: '#2563eb',
   },
   toolButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600' as const,
     color: '#2563eb',
   },
@@ -414,22 +413,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'center',
   },
   numberButton: {
-    width: (width - 40 - 24) / 5,
-    aspectRatio: 1,
+    width: (width - 56) / 5,
+    height: (width - 56) / 5,
+    maxWidth: 64,
+    maxHeight: 64,
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   numberButtonText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '600' as const,
     color: '#1e293b',
   },
