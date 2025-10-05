@@ -86,19 +86,22 @@ export default function HomeScreen() {
         console.log('Error playing sound on web:', error);
       }
     } else {
-      try {
+     try {
         const { sound } = await Audio.Sound.createAsync(
-          require('@/assets/sounds/click.mp3'),
-          { shouldPlay: true, volume: 1.0 }
+          { uri: 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3' },
+          { shouldPlay: false, volume: 0.6 }
         );
+      
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            sound.unloadAsync();
+          }
+        });
+      
         await sound.playAsync();
-        setTimeout(() => {
-          sound.unloadAsync();
-        }, 500);
-      } catch (error) {
-        console.log('Error playing sound on mobile:', error);
+      } catch (err) {
+        console.log('Error playing sound:', err);
       }
-    }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
