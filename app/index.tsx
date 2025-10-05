@@ -92,6 +92,8 @@ export default function HomeScreen() {
           { shouldPlay: false, volume: 0.6 }
         );
 
+       console.log(sound);
+
        await sound.playAsync();
       
         sound.setOnPlaybackStatusUpdate((status) => {
