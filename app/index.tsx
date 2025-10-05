@@ -91,14 +91,14 @@ export default function HomeScreen() {
           { uri: 'https://cdn.freesound.org/previews/320/320655_5260872-lq.mp3' },
           { shouldPlay: false, volume: 0.6 }
         );
+
+       await sound.playAsync();
       
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.isLoaded && status.didJustFinish) {
             sound.unloadAsync();
           }
         });
-      
-        await sound.playAsync();
       } catch (err) {
         console.log('Error playing sound:', err);
       }
