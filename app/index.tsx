@@ -102,6 +102,7 @@ export default function HomeScreen() {
       } catch (err) {
         console.log('Error playing sound:', err);
       }
+    }
   };
 
   const handleDifficultySelect = async (difficulty: Difficulty) => {
