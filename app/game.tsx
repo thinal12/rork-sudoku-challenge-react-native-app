@@ -1,5 +1,5 @@
-import { useLocalSearchParams, Stack } from 'expo-router';
-import { Eraser, RotateCcw, Edit3 } from 'lucide-react-native';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { Eraser, RotateCcw, Edit3, Trophy } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,6 +19,8 @@ import {
   type Board,
   type Difficulty,
 } from '@/utils/sudoku';
+import { useSubmitTime } from '@/services/leaderboard';
+import { useAuth } from '@/providers/AuthProvider';
 
 const { width } = Dimensions.get('window');
 const GRID_SIZE = Math.min(width - 40, 380);
@@ -26,6 +29,7 @@ const CELL_SIZE = GRID_SIZE / 9;
 export default function GameScreen() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const difficulty = (params.difficulty as Difficulty) || 'easy';
 
   const [board, setBoard] = useState<Board>(() => generatePuzzle(difficulty));
@@ -33,6 +37,9 @@ export default function GameScreen() {
   const [notesMode, setNotesMode] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+
+  const { user } = useAuth();
+  const submit = useSubmitTime();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,6 +56,26 @@ export default function GameScreen() {
       setIsComplete(true);
     }
   }, [board]);
+
+  useEffect(() => {
+    if (isComplete) {
+      if (!user) {
+        Alert.alert('Puzzle complete!', 'Sign in to save your time to the leaderboard.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign in', onPress: () => router.push('/auth') },
+        ]);
+        return;
+      }
+      submit.mutate({ difficulty, timeSeconds: timer }, {
+        onSuccess: () => {
+          Alert.alert('Time saved', 'Your best time has been updated.');
+        },
+        onError: (e: any) => {
+          Alert.alert('Could not save time', e?.message ?? 'Unknown error');
+        },
+      });
+    }
+  }, [isComplete]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -138,6 +165,11 @@ export default function GameScreen() {
         options={{
           title: `Sudoku - ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`,
           headerBackTitle: 'Menu',
+          headerRight: () => (
+            <TouchableOpacity onPress={() => router.push('/leaderboard')} style={{ marginRight: 8 }}>
+              <Trophy size={20} color="#2563eb" />
+            </TouchableOpacity>
+          ),
         }}
       />
 
