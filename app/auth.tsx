@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'r
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Lock, UserPlus, Mail, KeyRound, User2 } from 'lucide-react-native';
+import { Lock, UserPlus, Mail, KeyRound, User2, Grid3X3, TimerReset } from 'lucide-react-native';
 
 export default function AuthScreen() {
   const { signup, login, setUsername, isConfigured } = useAuth();
@@ -44,7 +44,26 @@ export default function AuthScreen() {
     <ErrorBoundary>
       <Stack.Screen options={{ title: mode === 'signup' ? 'Create account' : 'Sign in' }} />
       <View style={[styles.container, { paddingBottom: Platform.OS === 'web' ? 20 : insets.bottom }]} testID="auth-screen">
-        <View style={styles.artworkBg} />
+        <View style={styles.brandWrap}>
+          <View style={styles.brandIcon}>
+            <Grid3X3 size={22} color="#1d4ed8" />
+          </View>
+          <Text style={styles.brandTitle}>Sudoku Arena</Text>
+        </View>
+        <View style={styles.gridDecor} pointerEvents="none" testID="sudoku-grid-decor">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <View key={`cell-${i}`} style={styles.gridCell} />
+          ))}
+          <View style={styles.gridBold} />
+          <View style={[styles.gridBold, { transform: [{ rotate: '90deg' }] }]} />
+          <View style={styles.numChipsRow}>
+            {['1','2','3','4','5','6','7','8','9'].map((n) => (
+              <View key={`chip-${n}`} style={styles.numChip}>
+                <Text style={styles.numChipText}>{n}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
         <View style={styles.card}>
           <View style={styles.headerRow}>
             <View style={styles.iconWrap}>
@@ -112,6 +131,13 @@ export default function AuthScreen() {
             <Text style={styles.primaryButtonText}>{loading ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}</Text>
           </TouchableOpacity>
 
+          <View style={styles.footerMeta}>
+            <View style={styles.footerMetaItem}>
+              <TimerReset size={16} color="#64748b" />
+              <Text style={styles.footerMetaText}>Track PBs by difficulty</Text>
+            </View>
+          </View>
+
           <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'login' : 'signup')} style={styles.switch} testID="switch-auth-mode">
             <Text style={styles.switchText}>
               {mode === 'signup' ? 'Already have an account? Sign in' : "Don’t have an account? Create one"}
@@ -125,8 +151,16 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#eef2ff' },
-  artworkBg: { position: 'absolute', top: -80, right: -60, width: 220, height: 220, backgroundColor: '#dbeafe', borderRadius: 200 },
-  card: { marginTop: 40, backgroundColor: '#ffffff', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 6 },
+  brandWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 as unknown as number, marginTop: 8 },
+  brandIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#dbeafe', alignItems: 'center', justifyContent: 'center' },
+  brandTitle: { marginLeft: 10, fontSize: 20, fontWeight: '800' as const, color: '#1e293b' },
+  gridDecor: { position: 'absolute', top: 0, left: 0, right: 0, height: 260 },
+  gridCell: { position: 'absolute', width: '30%', height: '30%', borderColor: '#c7d2fe', borderWidth: 1 },
+  gridBold: { position: 'absolute', left: '33.33%', right: '33.33%', top: 20, bottom: 20, borderLeftWidth: 2, borderRightWidth: 2, borderColor: '#93c5fd' },
+  numChipsRow: { position: 'absolute', bottom: 10, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' },
+  numChip: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e5e7eb', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  numChipText: { color: '#1f2937', fontWeight: '700' as const },
+  card: { marginTop: 120, backgroundColor: '#ffffff', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 6 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   iconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   title: { fontSize: 26, fontWeight: '800' as const, color: '#0f172a' },
@@ -140,6 +174,9 @@ const styles = StyleSheet.create({
   segmentTextActive: { color: '#ffffff' },
   primaryButton: { backgroundColor: '#22c55e', paddingVertical: 12, borderRadius: 12, alignItems: 'center', marginTop: 4 },
   primaryButtonText: { color: '#ffffff', fontWeight: '800' as const },
+  footerMeta: { marginTop: 12, flexDirection: 'row', justifyContent: 'center' },
+  footerMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 as unknown as number },
+  footerMetaText: { marginLeft: 6, color: '#64748b', fontSize: 12, fontWeight: '700' as const },
   switch: { alignItems: 'center', marginTop: 12 },
   switchText: { color: '#2563eb', fontWeight: '700' as const },
   error: { color: '#ef4444', marginBottom: 8 },
