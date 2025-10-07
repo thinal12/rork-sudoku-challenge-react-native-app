@@ -46,7 +46,7 @@ export type AuthContextValue = {
   session: Session | null;
   username: string;
   isReady: boolean;
-  signup: (params: { email: string; password: string; username: string }) => Promise<void>;
+  signup: (params: { email: string; password: string; username: string }) => Promise<{ status: 'email_confirmation_sent' | 'signed_in'; user?: AuthUser }>;
   login: (params: { email: string; password: string }) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -100,12 +100,13 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    if (!data?.user) {
-      throw new Error('Signup failed');
-    }
     setUsernameState(username);
     await AsyncStorage.setItem(STORAGE_KEYS.username, username);
-    if (data?.access_token) {
+
+    const hasSession = Boolean(data?.access_token && data?.refresh_token && data?.user);
+    const hasUser = Boolean(data?.user);
+
+    if (hasSession && hasUser) {
       const newUser: AuthUser = { id: data.user.id, email: data.user.email };
       const newSession: Session = {
         access_token: data.access_token,
@@ -116,7 +117,14 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
       setUser(newUser);
       setSession(newSession);
       await persistSession(newSession, newUser);
+      return { status: 'signed_in', user: newUser } as const;
     }
+
+    if (hasUser || data) {
+      return { status: 'email_confirmation_sent', user: hasUser ? { id: data.user.id, email: data.user.email } : undefined } as const;
+    }
+
+    throw new Error('Signup failed');
   }, [isConfigured, persistSession]);
 
   const login = useCallback(async ({ email, password }: { email: string; password: string }) => {

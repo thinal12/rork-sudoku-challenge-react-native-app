@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -14,21 +14,46 @@ export default function AuthScreen() {
   const [username, setLocalUsername] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const TitleIcon = useMemo(() => (mode === 'signup' ? UserPlus : Lock), [mode]);
 
+  const iconBounce = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(iconBounce, { toValue: 1, duration: 700, easing: Easing.out(Easing.quad), useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(iconBounce, { toValue: 0, duration: 700, easing: Easing.in(Easing.quad), useNativeDriver: Platform.OS !== 'web' }),
+      ])
+    ).start();
+  }, [iconBounce]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(floatAnim, { toValue: 1, duration: 6000, easing: Easing.linear, useNativeDriver: Platform.OS !== 'web' })
+    ).start();
+  }, [floatAnim]);
+
   const onSubmit = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       if (!isConfigured) {
         setError('Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
         return;
       }
       if (mode === 'signup') {
-        await signup({ email, password, username });
+        const res = await signup({ email, password, username });
         setUsername(username);
+        if (res.status === 'email_confirmation_sent') {
+          setSuccess('We sent you a confirmation email. Please check your inbox to finish signing up.');
+          return;
+        }
       } else {
         await login({ email, password });
       }
@@ -61,21 +86,30 @@ export default function AuthScreen() {
           <View style={styles.gridBold} />
           <View style={[styles.gridBold, { transform: [{ rotate: '90deg' }] }]} />
           <View style={styles.numChipsRow}>
-            {['1','2','3','4','5','6','7','8','9'].map((n) => (
-              <View key={`chip-${n}`} style={styles.numChip}>
+            {['1','2','3','4','5','6','7','8','9'].map((n, idx) => (
+              <Animated.View key={`chip-${n}`} style={[styles.numChip, { transform: [
+                { translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, (idx % 2 === 0 ? -6 : 6)] }) },
+                { rotate: floatAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', idx % 2 === 0 ? '2deg' : '-2deg'] }) },
+              ] }]}>
                 <Text style={styles.numChipText}>{n}</Text>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </View>
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <View style={styles.iconWrap}>
+            <Animated.View style={[styles.iconWrap, { transform: [{ translateY: iconBounce.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }] }]}>
               {(() => { const I = TitleIcon; return <I size={28} color="#2563eb" />; })()}
-            </View>
+            </Animated.View>
             <Text style={styles.title}>{mode === 'signup' ? 'Create an account' : 'Welcome back'}</Text>
           </View>
           <Text style={styles.subtitle}>{mode === 'signup' ? 'Join the Sudoku squad and track your best times' : 'Sign in to continue your Sudoku streak'}</Text>
+          {success && (
+            <View style={styles.successBanner} testID="signup-success">
+              <Mail size={16} color="#16a34a" />
+              <Text style={styles.successText}>{success}</Text>
+            </View>
+          )}
           {error && <Text style={styles.error}>{error}</Text>}
           <View style={styles.inputRow}>
             <Mail size={18} color="#94a3b8" />
@@ -131,9 +165,18 @@ export default function AuthScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.primaryButton} onPress={onSubmit} disabled={loading} testID="submit-auth">
-            <Text style={styles.primaryButtonText}>{loading ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}</Text>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={onSubmit}
+              disabled={loading}
+              testID="submit-auth"
+              onPressIn={() => Animated.spring(buttonScale, { toValue: 0.98, useNativeDriver: Platform.OS !== 'web' }).start()}
+              onPressOut={() => Animated.spring(buttonScale, { toValue: 1, friction: 4, useNativeDriver: Platform.OS !== 'web' }).start()}
+            >
+              <Text style={styles.primaryButtonText}>{loading ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}</Text>
+            </TouchableOpacity>
+          </Animated.View>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -146,6 +189,7 @@ export default function AuthScreen() {
             onPress={async () => {
               setLoading(true);
               setError(null);
+              setSuccess(null);
               try {
                 await loginWithGoogle();
                 if (router.canGoBack()) {
@@ -175,7 +219,7 @@ export default function AuthScreen() {
             </View>
           </View>
 
-          <TouchableOpacity onPress={() => setMode(mode === 'signup' ? 'login' : 'signup')} style={styles.switch} testID="switch-auth-mode">
+          <TouchableOpacity onPress={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); setSuccess(null); }} style={styles.switch} testID="switch-auth-mode">
             <Text style={styles.switchText}>
               {mode === 'signup' ? 'Already have an account? Sign in' : "Don’t have an account? Create one"}
             </Text>
@@ -217,6 +261,8 @@ const styles = StyleSheet.create({
   switch: { alignItems: 'center', marginTop: 12 },
   switchText: { color: '#2563eb', fontWeight: '700' as const },
   error: { color: '#ef4444', marginBottom: 8 },
+  successBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginBottom: 10, gap: 8 as unknown as number },
+  successText: { color: '#065f46', fontWeight: '700' as const, flex: 1 },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#e5e7eb' },
   dividerText: { marginHorizontal: 12, color: '#94a3b8', fontSize: 12, fontWeight: '600' as const },
