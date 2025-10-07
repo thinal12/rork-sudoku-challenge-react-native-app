@@ -7,7 +7,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Lock, UserPlus, Mail, KeyRound, User2, Grid3X3, TimerReset } from 'lucide-react-native';
 
 export default function AuthScreen() {
-  const { signup, login, setUsername, isConfigured } = useAuth();
+  const { signup, login, loginWithGoogle, setUsername, isConfigured } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -131,6 +131,35 @@ export default function AuthScreen() {
             <Text style={styles.primaryButtonText}>{loading ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}</Text>
           </TouchableOpacity>
 
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity 
+            style={styles.googleButton} 
+            onPress={async () => {
+              setLoading(true);
+              setError(null);
+              try {
+                await loginWithGoogle();
+                router.back();
+              } catch (e: any) {
+                setError(e?.message ?? 'Google sign-in failed');
+              } finally {
+                setLoading(false);
+              }
+            }} 
+            disabled={loading}
+            testID="google-signin"
+          >
+            <View style={styles.googleIcon}>
+              <Text style={styles.googleIconText}>G</Text>
+            </View>
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
           <View style={styles.footerMeta}>
             <View style={styles.footerMetaItem}>
               <TimerReset size={16} color="#64748b" />
@@ -180,4 +209,11 @@ const styles = StyleSheet.create({
   switch: { alignItems: 'center', marginTop: 12 },
   switchText: { color: '#2563eb', fontWeight: '700' as const },
   error: { color: '#ef4444', marginBottom: 8 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#e5e7eb' },
+  dividerText: { marginHorizontal: 12, color: '#94a3b8', fontSize: 12, fontWeight: '600' as const },
+  googleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#e5e7eb', paddingVertical: 12, borderRadius: 12, gap: 10 as unknown as number },
+  googleIcon: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#4285f4', alignItems: 'center', justifyContent: 'center' },
+  googleIconText: { color: '#ffffff', fontWeight: '800' as const, fontSize: 12 },
+  googleButtonText: { color: '#1f2937', fontWeight: '700' as const, fontSize: 15 },
 });

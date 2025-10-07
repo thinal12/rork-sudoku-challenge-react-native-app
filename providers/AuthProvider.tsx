@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 export type AuthUser = {
   id: string;
@@ -46,6 +48,7 @@ export type AuthContextValue = {
   isReady: boolean;
   signup: (params: { email: string; password: string; username: string }) => Promise<void>;
   login: (params: { email: string; password: string }) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   setUsername: (name: string) => void;
   isConfigured: boolean;
@@ -159,6 +162,93 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
     AsyncStorage.setItem(STORAGE_KEYS.username, name).catch(() => {});
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    if (!isConfigured) throw new Error('Supabase not configured');
+    
+    const redirectUrl = Linking.createURL('/auth');
+    const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
+    
+    console.log('Opening Google OAuth:', authUrl);
+    
+    if (Platform.OS === 'web') {
+      window.location.href = authUrl;
+    } else {
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+      
+      if (result.type === 'success' && result.url) {
+        const url = new URL(result.url);
+        const accessToken = url.searchParams.get('access_token');
+        const refreshToken = url.searchParams.get('refresh_token');
+        const expiresIn = url.searchParams.get('expires_in');
+        
+        if (accessToken && refreshToken) {
+          const userRes = await supabaseAuthFetch('/auth/v1/user', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          
+          const newUser: AuthUser = { id: userRes.id, email: userRes.email };
+          const newSession: Session = {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            token_type: 'bearer',
+            expires_in: expiresIn ? parseInt(expiresIn) : undefined,
+          };
+          
+          setUser(newUser);
+          setSession(newSession);
+          await persistSession(newSession, newUser);
+          
+          const displayName = userRes.user_metadata?.full_name || userRes.email?.split('@')[0] || 'User';
+          setUsernameState(displayName);
+          await AsyncStorage.setItem(STORAGE_KEYS.username, displayName);
+        }
+      }
+    }
+  }, [isConfigured, persistSession]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleRedirect = async () => {
+        const url = window.location.href;
+        if (url.includes('access_token')) {
+          const urlObj = new URL(url);
+          const accessToken = urlObj.searchParams.get('access_token') || urlObj.hash.match(/access_token=([^&]+)/)?.[1];
+          const refreshToken = urlObj.searchParams.get('refresh_token') || urlObj.hash.match(/refresh_token=([^&]+)/)?.[1];
+          const expiresIn = urlObj.searchParams.get('expires_in') || urlObj.hash.match(/expires_in=([^&]+)/)?.[1];
+          
+          if (accessToken && refreshToken) {
+            try {
+              const userRes = await supabaseAuthFetch('/auth/v1/user', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              
+              const newUser: AuthUser = { id: userRes.id, email: userRes.email };
+              const newSession: Session = {
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                token_type: 'bearer',
+                expires_in: expiresIn ? parseInt(expiresIn) : undefined,
+              };
+              
+              setUser(newUser);
+              setSession(newSession);
+              await persistSession(newSession, newUser);
+              
+              const displayName = userRes.user_metadata?.full_name || userRes.email?.split('@')[0] || 'User';
+              setUsernameState(displayName);
+              await AsyncStorage.setItem(STORAGE_KEYS.username, displayName);
+              
+              window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (e) {
+              console.error('Error handling OAuth redirect:', e);
+            }
+          }
+        }
+      };
+      handleRedirect();
+    }
+  }, [persistSession]);
+
   return {
     user,
     session,
@@ -166,6 +256,7 @@ export const [AuthProvider, useAuth] = createContextHook<AuthContextValue>(() =>
     isReady,
     signup,
     login,
+    loginWithGoogle,
     logout,
     setUsername,
     isConfigured,
