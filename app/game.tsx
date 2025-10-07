@@ -24,7 +24,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 const { width } = Dimensions.get('window');
 const GRID_SIZE = Math.min(width - 40, 380);
-const CELL_SIZE = GRID_SIZE / 9;
+const CELL_SIZE = Math.floor(GRID_SIZE / 9);
 
 export default function GameScreen() {
   const params = useLocalSearchParams();
@@ -344,7 +344,10 @@ const styles = StyleSheet.create({
     height: GRID_SIZE,
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 4,
+    padding: 0,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#64748b',
     flexDirection: 'row',
     flexWrap: 'wrap',
     shadowColor: '#000',
@@ -358,7 +361,7 @@ const styles = StyleSheet.create({
     height: CELL_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0.5,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#e2e8f0',
   },
   cellBottomBorder: {
@@ -403,7 +406,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   noteText: {
-    fontSize: CELL_SIZE * 0.2,
+    fontSize: Math.max(10, CELL_SIZE * 0.2),
     color: '#64748b',
     width: '33.33%',
     textAlign: 'center',
