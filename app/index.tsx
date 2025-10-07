@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
-import { Grid3x3, Zap, Flame } from 'lucide-react-native';
+import { Grid3x3, Zap, Flame, Trophy, LogOut } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import {
   View,
@@ -9,10 +9,12 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Difficulty } from '@/utils/sudoku';
+import { useAuth } from '@/providers/AuthProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -55,6 +57,13 @@ const difficulties: DifficultyOption[] = [
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user, isReady, logout, username } = useAuth();
+
+  useEffect(() => {
+    if (isReady && !user) {
+      router.replace('/auth');
+    }
+  }, [isReady, user, router]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -63,6 +72,14 @@ export default function HomeScreen() {
       });
     }
   }, []);
+
+  if (!isReady || !user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   const playSound = async () => {
     if (Platform.OS === 'web') {
@@ -120,6 +137,24 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: Platform.OS === 'web' ? 0 : insets.bottom }]}>
       <View style={styles.content}>
+        <View style={styles.topBar}>
+          <Text style={styles.welcomeText}>Welcome, {username || 'Player'}!</Text>
+          <View style={styles.topBarButtons}>
+            <TouchableOpacity
+              style={styles.topBarButton}
+              onPress={() => router.push('/leaderboard')}
+            >
+              <Trophy size={20} color="#3b82f6" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.topBarButton}
+              onPress={logout}
+            >
+              <LogOut size={20} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View style={styles.header}>
           <Text style={styles.title}>Sudoku</Text>
           <Text style={styles.subtitle}>Choose your difficulty level</Text>
@@ -168,9 +203,38 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  welcomeText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#1e293b',
+  },
+  topBarButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  topBarButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   header: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 24,
     marginBottom: 48,
   },
   title: {
