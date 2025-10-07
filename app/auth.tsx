@@ -32,7 +32,11 @@ export default function AuthScreen() {
       } else {
         await login({ email, password });
       }
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
     } catch (e: any) {
       setError(e?.message ?? 'Unknown error');
     } finally {
@@ -144,7 +148,11 @@ export default function AuthScreen() {
               setError(null);
               try {
                 await loginWithGoogle();
-                router.back();
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/');
+                }
               } catch (e: any) {
                 setError(e?.message ?? 'Google sign-in failed');
               } finally {
